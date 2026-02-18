@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="color-scheme" content="light" />
+
+  <title>Talleres Esporádicos · Musicala</title>
+  <meta name="description" content="Pipeline + calendario + stats para planear talleres esporádicos por arte." />
+
+  <!-- Preload logo (mejora percepción) -->
+  <link rel="preload" as="image" href="./logo.png" />
+
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <a class="skip" href="#main">Saltar al contenido</a>
+
+  <noscript>
+    <div style="max-width:980px;margin:16px auto;padding:12px 14px;border:1px solid rgba(11,16,32,.12);border-radius:14px;background:#fff;">
+      Esta app necesita JavaScript para funcionar.
+    </div>
+  </noscript>
+
+  <header class="topbar" role="banner">
+    <div class="brand" aria-label="Marca">
+      <!-- Logo real -->
+      <img class="brandLogo" src="./logo.png" alt="Musicala" />
+      <div class="brandTxt">
+        <strong>Talleres Esporádicos</strong>
+        <span class="muted">Pipeline · Calendario · Stats</span>
+      </div>
+    </div>
+
+    <nav class="topActions" aria-label="Acciones">
+      <button class="btn" id="btnNew" type="button">+ Nuevo taller</button>
+      <button class="btn ghost" id="btnExport" type="button">Exportar</button>
+      <label class="btn ghost fileBtn" for="fileImport" title="Importar JSON">
+        Importar
+        <input id="fileImport" type="file" accept="application/json" hidden />
+      </label>
+    </nav>
+  </header>
+
+  <main id="main" class="shell" role="main">
+    <!-- FILTER BAR -->
+    <section class="filters" aria-label="Filtros">
+      <div class="field">
+        <label for="q">Buscar</label>
+        <input id="q" type="search" placeholder="Nombre, etiquetas, responsable…" autocomplete="off" />
+      </div>
+
+      <div class="field">
+        <label for="fMonth">Mes</label>
+        <select id="fMonth" aria-label="Filtrar por mes"></select>
+      </div>
+
+      <div class="field">
+        <label for="fArt">Arte</label>
+        <select id="fArt" aria-label="Filtrar por arte"></select>
+      </div>
+
+      <div class="field">
+        <label for="fStatus">Estado</label>
+        <select id="fStatus" aria-label="Filtrar por estado"></select>
+      </div>
+
+      <div class="field">
+        <label for="fPriority">Prioridad</label>
+        <select id="fPriority" aria-label="Filtrar por prioridad">
+          <option value="all">Todas</option>
+          <option value="high">Alta</option>
+          <option value="mid">Media</option>
+          <option value="low">Baja</option>
+        </select>
+      </div>
+
+      <div class="checks" aria-label="Opciones rápidas">
+        <label class="check">
+          <input type="checkbox" id="onlyConfirmed" />
+          <span>Solo confirmados</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" id="compactMode" />
+          <span>Compacto</span>
+        </label>
+      </div>
+
+      <div class="filterActions" aria-label="Acciones de filtros">
+        <button class="btn ghost" id="btnReset" type="button">Limpiar</button>
+        <button class="btn" id="btnDemo" type="button">Cargar demo</button>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section class="grid" aria-label="Dashboard y timeline">
+      <article class="card statsCard">
+        <header class="cardHead">
+          <h2>Dashboard</h2>
+          <span class="pill" id="countPill">0</span>
+        </header>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="k">Cadencia</div>
+            <div class="v" id="cadence">—</div>
+            <div class="s muted">Meses con al menos 1 taller</div>
+          </div>
+          <div class="stat">
+            <div class="k">Conversión</div>
+            <div class="v" id="conversion">—</div>
+            <div class="s muted">Confirmado → Realizado</div>
+          </div>
+          <div class="stat">
+            <div class="k">Huecos</div>
+            <div class="v" id="gaps">—</div>
+            <div class="s muted">Meses sin talleres</div>
+          </div>
+        </div>
+
+        <div class="miniCharts" aria-label="Gráficas resumidas">
+          <div class="miniChart">
+            <div class="miniTitle">Por estado</div>
+            <div id="chartStatus" class="bars"></div>
+          </div>
+          <div class="miniChart">
+            <div class="miniTitle">Por arte</div>
+            <div id="chartArt" class="bars"></div>
+          </div>
+          <div class="miniChart">
+            <div class="miniTitle">Por mes</div>
+            <div id="chartMonth" class="bars"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card timelineCard">
+        <header class="cardHead">
+          <h2>Timeline anual</h2>
+          <span class="muted small">click en un mes para filtrar</span>
+        </header>
+        <div id="timeline" class="timeline" aria-label="Timeline anual"></div>
+      </article>
+    </section>
+
+    <!-- KANBAN -->
+    <section class="card kanbanWrap" aria-label="Pipeline">
+      <header class="cardHead">
+        <h2>Pipeline (Kanban)</h2>
+        <span class="muted small">Arrastra tarjetas entre columnas</span>
+      </header>
+
+      <div id="kanban" class="kanban" role="region" aria-label="Tablero Kanban"></div>
+    </section>
+
+    <!-- MONTH VIEW -->
+    <section class="card monthWrap" aria-label="Calendario mensual">
+      <header class="cardHead">
+        <h2>Calendario mensual</h2>
+        <div class="monthControls" aria-label="Navegación de mes">
+          <button class="btn ghost" id="prevMonth" type="button" title="Mes anterior" aria-label="Mes anterior">‹</button>
+          <div class="monthTitle" id="monthTitle">—</div>
+          <button class="btn ghost" id="nextMonth" type="button" title="Mes siguiente" aria-label="Mes siguiente">›</button>
+        </div>
+      </header>
+      <div id="monthList" class="monthList"></div>
+    </section>
+
+    <!-- YEAR LIST -->
+    <section class="card yearWrap" aria-label="Lista anual">
+      <header class="cardHead">
+        <h2>Lista completa del año</h2>
+        <div class="yearControls" aria-label="Opciones de lista anual">
+          <label class="check">
+            <input type="checkbox" id="yearOnlyDated" />
+            <span>Solo con fecha</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="yearGroupByMonth" checked />
+            <span>Agrupar por mes</span>
+          </label>
+        </div>
+      </header>
+
+      <div id="yearList" class="yearList"></div>
+    </section>
+  </main>
+
+  <!-- MODAL: NEW/EDIT -->
+  <dialog id="dlg" class="dlg">
+    <form id="form" method="dialog" class="dlgBox">
+      <header class="dlgHead">
+        <h3 id="dlgTitle">Nuevo taller</h3>
+        <button class="iconBtn" type="button" id="btnClose" aria-label="Cerrar">✕</button>
+      </header>
+
+      <div class="dlgBody">
+        <input type="hidden" id="id" />
+
+        <div class="row2">
+          <div class="field">
+            <label for="title">Título</label>
+            <input id="title" required placeholder="Ej: Taller de acuarela nocturna" />
+          </div>
+
+          <div class="field">
+            <label for="art">Arte</label>
+            <select id="art"></select>
+          </div>
+        </div>
+
+        <div class="row3">
+          <div class="field">
+            <label for="status">Estado</label>
+            <select id="status"></select>
+          </div>
+
+          <div class="field">
+            <label for="priority">Prioridad</label>
+            <select id="priority">
+              <option value="high">Alta</option>
+              <option value="mid" selected>Media</option>
+              <option value="low">Baja</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="suggestedMonth">Mes sugerido</label>
+            <input id="suggestedMonth" type="month" />
+          </div>
+        </div>
+
+        <div class="row3">
+          <div class="field">
+            <label for="date">Fecha real (si aplica)</label>
+            <input id="date" type="date" />
+          </div>
+          <div class="field">
+            <label for="time">Hora</label>
+            <input id="time" type="time" />
+          </div>
+          <div class="field">
+            <label for="duration">Duración (min)</label>
+            <input id="duration" type="number" min="15" step="15" placeholder="90" />
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="responsible">Responsable</label>
+            <input id="responsible" placeholder="Ej: Cata / Alek / profe X" />
+          </div>
+          <div class="field">
+            <label for="capacity">Cupo</label>
+            <input id="capacity" type="number" min="1" step="1" placeholder="12" />
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="price">Precio (COP)</label>
+            <input id="price" type="number" min="0" step="1000" placeholder="60000" />
+          </div>
+          <div class="field">
+            <label for="place">Lugar</label>
+            <input id="place" placeholder="Sede / Hogar / Virtual / Salón 5…" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="tags">Etiquetas</label>
+          <input id="tags" placeholder="Ej: café, parejas, principiantes (separadas por coma)" />
+        </div>
+
+        <div class="field">
+          <label for="summary">Resumen / notas</label>
+          <textarea id="summary" rows="4" placeholder="Objetivo, materiales, observaciones…"></textarea>
+        </div>
+      </div>
+
+      <footer class="dlgFoot">
+        <div class="left">
+          <button class="btn danger ghost" type="button" id="btnDelete">Eliminar</button>
+        </div>
+        <div class="right">
+          <button class="btn ghost" value="cancel" type="button" id="btnCancel">Cancelar</button>
+          <button class="btn" value="default" type="submit" id="btnSave">Guardar</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <footer class="foot">
+    <span class="muted small">Build: <span id="build"></span></span>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
