@@ -39,6 +39,7 @@ const ART_TYPES = [
   { id:"dance",  name:"Danza" },
   { id:"visual", name:"Artes Plásticas" },
   { id:"theatre",name:"Teatro" },
+  { id:"other",  name:"Otros" },
 ];
 
 const STATUSES = [
